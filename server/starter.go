@@ -49,6 +49,27 @@ func signalHandler() {
 	}
 }
 
+func handleSecureListener() {
+	for {
+		if FinishAndStop {
+			break
+		}
+		ListenerTLS.(*net.TCPListener).SetDeadline(time.Now().Add(60 * time.Second))
+		connection, err := ListenerTLS.Accept()
+		if err != nil {
+			if opError, ok := err.(*net.OpError); !ok || !opError.Timeout() {
+				fmt.Println("listening error ", err)
+			}
+		} else {
+			cid := genClientID()
+			p := NewParadise(connection, cid, time.Now().Unix())
+			ConnectionMap[cid] = p
+
+			go p.HandleCommands()
+		}
+	}
+}
+
 func Start(fm *paradise.FileManager, am *paradise.AuthManager, gracefulChild bool) {
 	Settings = ReadSettings()
 	FinishAndStop = false
@@ -90,6 +111,8 @@ func Start(fm *paradise.FileManager, am *paradise.AuthManager, gracefulChild boo
 	}
 
 	go signalHandler()
+
+	go handleSecureListener()
 
 	for {
 		if FinishAndStop {
