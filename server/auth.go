@@ -2,8 +2,9 @@ package server
 
 import "fmt"
 
-//import "crypto/tls"
-//import "bufio"
+import "crypto/tls"
+import "bufio"
+
 //import "net"
 
 func (p *Paradise) HandleUser() {
@@ -25,18 +26,26 @@ func (p *Paradise) HandlePass() {
 func (p *Paradise) HandleAuth() {
 	fmt.Println(p.param)
 
-	/*tlsConn := tls.Server(p.theConnection, &config)
-	fmt.Println(tlsConn)
-	fmt.Println("before handshake")
-	h := tlsConn.Handshake()
-	fmt.Println("handshake")
-	fmt.Println(h)
+	// openssl req -new -nodes -x509 -out server.pem -keyout server.key -days 3650 -subj "/C=DE/ST=NRW/L=Earth/O=Random Company/OU=IT/CN=www.random.com/emailAddress=foo@foo.com"
 
-	p.theConnection = net.Conn(tlsConn)
-	fmt.Println("after")
-	p.writer = bufio.NewWriter(p.theConnection)
-	p.rreader = bufio.NewReader(p.theConnection)
-	*/
+	cert, cerr := tls.LoadX509KeyPair("server.pem", "server.key")
+	if cerr != nil {
+		fmt.Println(cerr)
+		return
+	}
+	config := tls.Config{
+		Certificates: []tls.Certificate{cert},
+		ClientAuth:   tls.VerifyClientCertIfGiven,
+		ServerName:   "localhost"}
+	tlsConn := tls.Server(p.theConnection, &config)
+	err := tlsConn.Handshake()
+	if err == nil {
+		//conn.conn = tlsConn
+		p.writer = bufio.NewWriter(tlsConn)
+		p.reader = bufio.NewReader(tlsConn)
+		//conn.tls = true
+	}
+
 	p.writeMessage(234, "AUTH command ok. Expecting TLS Negotiation.")
 
 }

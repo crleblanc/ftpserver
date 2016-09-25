@@ -51,8 +51,11 @@ func (p *Paradise) closePassive(passive *Passive) {
 
 func getThatPassiveConnection(passiveListen *net.TCPListener, p *Passive) {
 	var perr error
+
+	//TODO 1
+	//listener = tls.NewListener(passiveListen, socket.tlsConfing)
+
 	p.connection, perr = passiveListen.AcceptTCP()
-	//p.connection = tls.Client(p.connection, &config)
 	if perr != nil {
 		p.listenFailedAt = time.Now().Unix()
 		p.waiter.Done()

@@ -7,7 +7,6 @@ import "io/ioutil"
 type ParadiseSettings struct {
 	Host           string
 	Port           int
-	SecurePort     int
 	MaxConnections int
 	MaxPassive     int
 	Exec           string

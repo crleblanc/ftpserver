@@ -8,7 +8,6 @@ import "os"
 import "os/signal"
 import "os/exec"
 import "github.com/andrewarrow/paradise_ftp/paradise"
-import "crypto/tls"
 
 var Settings ParadiseSettings
 var Listener net.Listener
@@ -49,27 +48,6 @@ func signalHandler() {
 	}
 }
 
-func handleSecureListener() {
-	for {
-		if FinishAndStop {
-			break
-		}
-		ListenerTLS.(*net.TCPListener).SetDeadline(time.Now().Add(60 * time.Second))
-		connection, err := ListenerTLS.Accept()
-		if err != nil {
-			if opError, ok := err.(*net.OpError); !ok || !opError.Timeout() {
-				fmt.Println("listening error ", err)
-			}
-		} else {
-			cid := genClientID()
-			p := NewParadise(connection, cid, time.Now().Unix())
-			ConnectionMap[cid] = p
-
-			go p.HandleCommands()
-		}
-	}
-}
-
 func Start(fm *paradise.FileManager, am *paradise.AuthManager, gracefulChild bool) {
 	Settings = ReadSettings()
 	FinishAndStop = false
@@ -83,20 +61,7 @@ func Start(fm *paradise.FileManager, am *paradise.AuthManager, gracefulChild boo
 		Listener, err = net.FileListener(f)
 	} else {
 		url := fmt.Sprintf("%s:%d", Settings.Host, Settings.Port)
-		secure_url := fmt.Sprintf("%s:%d", Settings.Host, Settings.SecurePort)
 		Listener, err = net.Listen("tcp", url)
-
-		// openssl req -new -nodes -x509 -out server.pem -keyout server.key -days 3650 -subj "/C=DE/ST=NRW/L=Earth/O=Random Company/OU=IT/CN=www.random.com/emailAddress=foo@foo.com"
-		cert, cerr := tls.LoadX509KeyPair("server.pem", "server.key")
-		if cerr != nil {
-			fmt.Println(cerr)
-			return
-		}
-		config := tls.Config{
-			Certificates: []tls.Certificate{cert},
-			ClientAuth:   tls.VerifyClientCertIfGiven,
-			ServerName:   "localhost"}
-		ListenerTLS, errTLS = tls.Listen("tcp", secure_url, &config)
 	}
 
 	if err != nil || errTLS != nil {
@@ -111,8 +76,6 @@ func Start(fm *paradise.FileManager, am *paradise.AuthManager, gracefulChild boo
 	}
 
 	go signalHandler()
-
-	go handleSecureListener()
 
 	for {
 		if FinishAndStop {
