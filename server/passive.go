@@ -7,6 +7,8 @@ import "strconv"
 import "strings"
 import "time"
 
+//import "crypto/tls"
+
 func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
 	c := make(chan struct{})
 	go func() {
@@ -50,6 +52,7 @@ func (p *Paradise) closePassive(passive *Passive) {
 func getThatPassiveConnection(passiveListen *net.TCPListener, p *Passive) {
 	var perr error
 	p.connection, perr = passiveListen.AcceptTCP()
+	//p.connection = tls.Client(p.connection, &config)
 	if perr != nil {
 		p.listenFailedAt = time.Now().Unix()
 		p.waiter.Done()

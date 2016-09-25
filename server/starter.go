@@ -8,9 +8,11 @@ import "os"
 import "os/signal"
 import "os/exec"
 import "github.com/andrewarrow/paradise_ftp/paradise"
+import "crypto/tls"
 
 var Settings ParadiseSettings
 var Listener net.Listener
+var ListenerTLS net.Listener
 var err error
 var FinishAndStop bool
 
@@ -53,17 +55,31 @@ func Start(fm *paradise.FileManager, am *paradise.AuthManager, gracefulChild boo
 	fmt.Println("starting...")
 	FileManager = fm
 	AuthManager = am
+	var errTLS error
 
 	if gracefulChild {
 		f := os.NewFile(3, "") // FD 3 is special number
 		Listener, err = net.FileListener(f)
 	} else {
 		url := fmt.Sprintf("%s:%d", Settings.Host, Settings.Port)
+		secure_url := fmt.Sprintf("%s:%d", Settings.Host, Settings.SecurePort)
 		Listener, err = net.Listen("tcp", url)
+
+		// openssl req -new -nodes -x509 -out server.pem -keyout server.key -days 3650 -subj "/C=DE/ST=NRW/L=Earth/O=Random Company/OU=IT/CN=www.random.com/emailAddress=foo@foo.com"
+		cert, cerr := tls.LoadX509KeyPair("server.pem", "server.key")
+		if cerr != nil {
+			fmt.Println(cerr)
+			return
+		}
+		config := tls.Config{
+			Certificates: []tls.Certificate{cert},
+			ClientAuth:   tls.VerifyClientCertIfGiven,
+			ServerName:   "localhost"}
+		ListenerTLS, errTLS = tls.Listen("tcp", secure_url, &config)
 	}
 
-	if err != nil {
-		fmt.Println("cannot listen: ", err)
+	if err != nil || errTLS != nil {
+		fmt.Println("cannot listen: ", err, errTLS)
 		return
 	}
 	fmt.Println("listening...")

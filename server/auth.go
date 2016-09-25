@@ -1,8 +1,10 @@
 package server
 
 import "fmt"
-import "crypto/tls"
-import "bufio"
+
+//import "crypto/tls"
+//import "bufio"
+//import "net"
 
 func (p *Paradise) HandleUser() {
 	p.user = p.param
@@ -22,16 +24,20 @@ func (p *Paradise) HandlePass() {
 
 func (p *Paradise) HandleAuth() {
 	fmt.Println(p.param)
-	p.writeMessage(234, "AUTH command ok. Expecting TLS Negotiation.")
 
-	config := tls.Config{
-		InsecureSkipVerify: true,
-		ClientAuth:         tls.RequestClientCert,
-	}
+	/*tlsConn := tls.Server(p.theConnection, &config)
+	fmt.Println(tlsConn)
+	fmt.Println("before handshake")
+	h := tlsConn.Handshake()
+	fmt.Println("handshake")
+	fmt.Println(h)
 
-	p.theConnection = tls.Client(p.theConnection, &config)
+	p.theConnection = net.Conn(tlsConn)
+	fmt.Println("after")
 	p.writer = bufio.NewWriter(p.theConnection)
-	p.reader = bufio.NewReader(p.theConnection)
+	p.rreader = bufio.NewReader(p.theConnection)
+	*/
+	p.writeMessage(234, "AUTH command ok. Expecting TLS Negotiation.")
 
 }
 
