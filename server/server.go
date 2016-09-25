@@ -34,6 +34,7 @@ type Paradise struct {
 	passives      map[string]*Passive
 	lastPassCid   string
 	userInfo      map[string]string
+	tls           bool
 }
 
 func init() {

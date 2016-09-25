@@ -38,13 +38,15 @@ func (p *Paradise) HandleAuth() {
 		ClientAuth:   tls.VerifyClientCertIfGiven,
 		ServerName:   "localhost"}
 	tlsConn := tls.Server(p.theConnection, &config)
+	fmt.Println("handshake1")
 	err := tlsConn.Handshake()
 	if err == nil {
-		//conn.conn = tlsConn
+		p.theConnection = tlsConn
 		p.writer = bufio.NewWriter(tlsConn)
 		p.reader = bufio.NewReader(tlsConn)
-		//conn.tls = true
+		p.tls = true
 	}
+	fmt.Println("handshake2")
 
 	p.writeMessage(234, "AUTH command ok. Expecting TLS Negotiation.")
 

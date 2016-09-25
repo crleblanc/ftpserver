@@ -6,6 +6,7 @@ import "net"
 import "strconv"
 import "strings"
 import "time"
+import "crypto/tls"
 
 //import "crypto/tls"
 
@@ -30,12 +31,13 @@ type Passive struct {
 	closeFailedAt   int64
 	listenAt        int64
 	connectedAt     int64
-	connection      *net.TCPConn
+	connection      net.Conn
 	command         string
 	param           string
 	cid             string
 	port            int
 	waiter          sync.WaitGroup
+	tls             bool
 }
 
 func (p *Paradise) closePassive(passive *Passive) {
@@ -52,10 +54,19 @@ func (p *Paradise) closePassive(passive *Passive) {
 func getThatPassiveConnection(passiveListen *net.TCPListener, p *Passive) {
 	var perr error
 
-	//TODO 1
-	//listener = tls.NewListener(passiveListen, socket.tlsConfing)
+	cert, _ := tls.LoadX509KeyPair("server.pem", "server.key")
+	config := tls.Config{
+		Certificates: []tls.Certificate{cert},
+		ClientAuth:   tls.VerifyClientCertIfGiven,
+		ServerName:   "localhost"}
 
-	p.connection, perr = passiveListen.AcceptTCP()
+	if p.tls {
+		l := tls.NewListener(passiveListen, &config)
+		p.connection, perr = l.Accept()
+	} else {
+		p.connection, perr = passiveListen.AcceptTCP()
+	}
+
 	if perr != nil {
 		p.listenFailedAt = time.Now().Unix()
 		p.waiter.Done()
@@ -67,10 +78,11 @@ func getThatPassiveConnection(passiveListen *net.TCPListener, p *Passive) {
 	p.waiter.Done()
 }
 
-func NewPassive(passiveListen *net.TCPListener, cid string, now int64) *Passive {
+func NewPassive(passiveListen *net.TCPListener, cid string, now int64, tls bool) *Passive {
 	PassiveCount++
 	p := Passive{}
 	p.cid = cid
+	p.tls = tls
 	p.listenAt = now
 
 	add := passiveListen.Addr()
@@ -103,7 +115,7 @@ func (p *Paradise) HandlePassive() {
 	}
 
 	cid := genClientID()
-	passive := NewPassive(passiveListen, cid, time.Now().Unix())
+	passive := NewPassive(passiveListen, cid, time.Now().Unix(), p.tls)
 	passive.command = p.command
 	passive.param = p.param
 	p.lastPassCid = cid
