@@ -86,11 +86,11 @@ func Start(fm *paradise.FileManager, am *paradise.AuthManager, gracefulChild boo
 				fmt.Println("listening error ", err)
 			}
 		} else {
-		  cid := genClientID()
-		  p := NewParadise(connection, cid, time.Now().Unix())
-		  ConnectionMap[cid] = p
+			cid := genClientID()
+			p := NewParadise(connection, cid, time.Now().Unix())
+			ConnectionMap[cid] = p
 
-		  go p.HandleCommands()
+			go p.HandleCommands()
 		}
 	}
 

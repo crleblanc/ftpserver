@@ -1,6 +1,8 @@
 package server
 
 import "fmt"
+import "crypto/tls"
+import "bufio"
 
 func (p *Paradise) HandleUser() {
 	p.user = p.param
@@ -21,10 +23,16 @@ func (p *Paradise) HandlePass() {
 func (p *Paradise) HandleAuth() {
 	fmt.Println(p.param)
 	p.writeMessage(234, "AUTH command ok. Expecting TLS Negotiation.")
-	//2012-02-08 08:04:11 7424 3 Status: Initializing TLS...
-	//2012-02-08 08:04:11 7424 3 Status: Verifying certificate...
-	//2012-02-08 08:04:11 7424 3 Command: USER msoftpuser
-	//2012-02-08 08:04:11 7424 3 Status: TLS/SSL connection established.
+
+	config := tls.Config{
+		InsecureSkipVerify: true,
+		ClientAuth:         tls.RequestClientCert,
+	}
+
+	p.theConnection = tls.Client(p.theConnection, &config)
+	p.writer = bufio.NewWriter(p.theConnection)
+	p.reader = bufio.NewReader(p.theConnection)
+
 }
 
 func (p *Paradise) HandlePbsz() {
