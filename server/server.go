@@ -58,6 +58,9 @@ func init() {
 	CommandMap["CWD"] = (*Paradise).HandleCwd
 	CommandMap["SIZE"] = (*Paradise).HandleSize
 	CommandMap["RETR"] = (*Paradise).HandleRetr
+	CommandMap["AUTH"] = (*Paradise).HandleAuth
+	CommandMap["PBSZ"] = (*Paradise).HandlePbsz
+	CommandMap["PROT"] = (*Paradise).HandleProt
 
 	ConnectionMap = make(map[string]*Paradise)
 }
